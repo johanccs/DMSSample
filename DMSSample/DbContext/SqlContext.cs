@@ -5,7 +5,7 @@ using System.Data.SqlClient;
 
 namespace Pinewood.DMSSample.Business.DbContext
 {
-    internal class SqlContext
+    internal static class SqlContext
     {
         private static readonly string _connectionString;
 
@@ -27,9 +27,15 @@ namespace Pinewood.DMSSample.Business.DbContext
                     _command.Parameters.Add(parameter);
                 }
 
-                SqlDataReader _reader = await _command.ExecuteReaderAsync(CommandBehavior.CloseConnection);
-
-                return _reader;
+                try
+                {
+                    SqlDataReader _reader = await _command.ExecuteReaderAsync(CommandBehavior.CloseConnection);
+                    return _reader;
+                }
+                catch (Exception)
+                {
+                    throw;
+                }
             }
         }
 
@@ -44,9 +50,15 @@ namespace Pinewood.DMSSample.Business.DbContext
                     _command.Parameters.Add(param);
                 }
 
-                var result = await _command.ExecuteNonQueryAsync();
-
-                return result > 0;
+                try
+                {
+                    var result = await _command.ExecuteNonQueryAsync();
+                    return result > 0;
+                }
+                catch (Exception)
+                {
+                    throw;
+                }
             }
         }
 
@@ -62,9 +74,15 @@ namespace Pinewood.DMSSample.Business.DbContext
                     _command.Parameters.Add(param);
                 }
 
-                var result = await _command.ExecuteNonQueryAsync();
-
-                return result > 0;
+                try
+                {
+                    var result = await _command.ExecuteNonQueryAsync();
+                    return result > 0;
+                }
+                catch (Exception)
+                {
+                    throw;
+                }
             }
         }
     }

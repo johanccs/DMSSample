@@ -14,10 +14,17 @@ namespace Pinewood.DMSSample.Business
 
         #endregion
 
+        #region Fields
+
+        bool opResult = false;
+
+        #endregion
+
         #region Ctor
 
         public PartInvoiceController()
         {
+            //Empty constructor to satisfy SampleConsole project.
         }
 
         public PartInvoiceController(IQueryRepo<Customer>queryRepo, ICommandRepo<PartInvoice>commandRepo)
@@ -32,31 +39,42 @@ namespace Pinewood.DMSSample.Business
 
         public async Task<CreatePartInvoiceResult> CreatePartInvoiceAsync(string stockCode, int quantity, string customerName)
         {
+
             if (!Validate(stockCode, quantity, customerName).Success)
                 throw new ArgumentException("Input values invalid");
 
-            var customer = await _queryRepo.GetByName(customerName);
-
-            int custID = customer?.ID ?? 0;
-            if (custID <= 0)
+            try
             {
-                return new CreatePartInvoiceResult(false);
+                var customer = await _queryRepo.GetByName(customerName);
+
+                int custID = customer?.ID ?? 0;
+                if (custID <= 0)
+                {
+                    return new CreatePartInvoiceResult(false);
+                }
+
+                var result = await ExternalRepo.GetPartAvailability(stockCode);
+
+                if (result.ResultCount < 0)
+                    return result.ExecptionResult;
+
+                PartInvoice partInvoice = new PartInvoice(
+                    stockCode: stockCode,
+                    quantity: quantity,
+                    customerID: custID
+                );
+
+                await _commandRepo.Add(partInvoice);
+
+                opResult = true;
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
             }
 
-            var result = await ExternalRepo.GetPartAvailability(stockCode);
-
-            if (result.ResultCount < 0)
-                return result.ExecptionResult;
-
-            PartInvoice partInvoice = new PartInvoice(
-                stockCode: stockCode,
-                quantity: quantity,
-                customerID: custID
-            );
-
-            await _commandRepo.Add(partInvoice);
-
-            return new CreatePartInvoiceResult(true);
+            return new CreatePartInvoiceResult(opResult);
         }
 
         #endregion
